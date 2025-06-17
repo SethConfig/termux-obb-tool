@@ -1,0 +1,652 @@
+#!/bin/bash
+
+# Dizin tanımları
+down=/storage/emulated/0/Download
+ryna_dir=/storage/emulated/0/Download/Ryna
+
+# Renk tanımları
+NOCOLOR='\033[0m'
+RED='\033[0;31m'
+GREEN='\033[0;32m'
+ORANGE='\033[0;33m'
+BLUE='\033[0;34m'
+PURPLE='\033[0;35m'
+CYAN='\033[0;36m'
+LIGHTGRAY='\033[0;37m'
+DARKGRAY='\033[1;30m'
+LIGHTRED='\033[1;31m'
+LIGHTGREEN='\033[1;32m'
+YELLOW='\033[1;33m'
+LIGHTBLUE='\033[1;34m'
+LIGHTPURPLE='\033[1;35m'
+LIGHTCYAN='\033[1;36m'
+WHITE='\033[1;37m'
+
+# Dil değişkenleri
+declare -A lang
+
+# Bağımlılık kontrol ve kurulum fonksiyonu
+function install_dependencies {
+    echo -e "${YELLOW}Gerekli paketler kontrol ediliyor...${NOCOLOR}"
+    
+    # Gerekli paketler
+    required_pkgs=("zip" "unzip" "coreutils" "findutils")
+    
+    # Termux deposunu güncelle
+    pkg update -y >/dev/null 2>&1
+    
+    # Her bir paket için kontrol yap
+    for pkg in "${required_pkgs[@]}"; do
+        if ! dpkg -s $pkg >/dev/null 2>&1; then
+            echo -e "${RED}$pkg paketi yüklü değil, yükleniyor...${NOCOLOR}"
+            pkg install -y $pkg >/dev/null 2>&1
+            if [ $? -eq 0 ]; then
+                echo -e "${GREEN}$pkg başarıyla yüklendi${NOCOLOR}"
+            else
+                echo -e "${RED}$pkg yüklenirken hata oluştu!${NOCOLOR}"
+                exit 1
+            fi
+        else
+            echo -e "${GREEN}$pkg zaten yüklü${NOCOLOR}"
+        fi
+    done
+    
+    # Depolama izinlerini kontrol et
+    if [[ ! -d /storage/emulated/0 ]]; then
+        echo -e "${YELLOW}Depolama izinleri isteniyor...${NOCOLOR}"
+        termux-setup-storage
+        sleep 2
+    fi
+    
+    # Ryna dizinini oluştur
+    if [[ ! -d "$ryna_dir" ]]; then
+        mkdir -p "$ryna_dir"
+        echo -e "${GREEN}Ryna dizini oluşturuldu: $ryna_dir${NOCOLOR}"
+    fi
+    
+    echo -e "${LIGHTGREEN}Tüm bağımlılıklar kontrol edildi ve hazır!${NOCOLOR}"
+    sleep 2
+    clear
+}
+
+# Dil seçim fonksiyonu
+function select_language {
+    clear
+    echo -e "${BLUE}RYNA CODE${NOCOLOR} ${WHITE}tool v1${NOCOLOR}"
+    echo -e "-----------------------"
+    PS3=': '
+    options=(
+        "English"               # 1. Dünyada en çok konuşulan
+        "中文 (Chinese)"        # 2. Dünyada en çok konuşulan
+        "हिन्दी (Hindi)"        # 3. Dünyada en çok konuşulan
+        "Español (Spanish)"     # 4. Dünyada en çok konuşulan
+        "Français (French)"     # 5. Dünyada en çok konuşulan
+        "العربية (Arabic)"     # 6. Dünyada en çok konuşulan
+        "বাংলা (Bengali)"      # 7. Dünyada en çok konuşulan
+        "Русский (Russian)"    # 8. Dünyada en çok konuşulan
+        "Português (Portuguese)" # 9. Dünyada en çok konuşulan
+        "Indonesian (Indonesian)" # 10. Dünyada en çok konuşulan
+        "Urdu (Urdu)"          # 11. Dünyada en çok konuşulan
+        "Deutsch (German)"      # 12. Dünyada en çok konuşulan
+        "日本語 (Japanese)"      # Popüler diğer diller
+        "Turkish (Turkish)"     # Popüler diğer diller
+        "Italiano (Italian)"    # Popüler diğer diller
+        "Polski (Polish)"       # Popüler diğer diller
+        "Exit"
+    )
+    select opt in "${options[@]}"
+    do
+        case $REPLY in
+            1) # English
+                lang=(
+                    ["title"]="RYNA CODE"
+                    ["subtitle"]="tool v1"
+                    ["menu1"]="Extract Obb"
+                    ["menu2"]="Repack Obb"
+                    ["menu3"]="Exit"
+                    ["select_obb"]="Select OBB file to process:"
+                    ["no_obb"]="Error: No OBB file found in $down directory!"
+                    ["copy_obb"]="Please copy OBB files to /storage/emulated/0/Download directory"
+                    ["unpacking"]="Unpacking OBB Files..."
+                    ["repacking"]="Repacking OBB Files..."
+                    ["complete"]="PROCESS COMPLETED"
+                    ["cache_cleared"]="CACHE CLEARED"
+                    ["no_cache"]="NO CACHE ISSUE"
+                    ["main_menu"]="Return to Main Menu"
+                    ["cancel"]="Cancel"
+                    ["invalid"]="Invalid selection, please try again."
+                    ["selected"]="Selected"
+                )
+                break
+                ;;
+            2) # Chinese (中文)
+                lang=(
+                    ["title"]="RYNA CODE"
+                    ["subtitle"]="工具 v1"
+                    ["menu1"]="解压Obb"
+                    ["menu2"]="打包Obb"
+                    ["menu3"]="退出"
+                    ["select_obb"]="请选择要处理的OBB文件:"
+                    ["no_obb"]="错误: 在 $down 目录中找不到OBB文件!"
+                    ["copy_obb"]="请将OBB文件复制到 /storage/emulated/0/Download 目录"
+                    ["unpacking"]="正在解压OBB文件..."
+                    ["repacking"]="正在重新打包OBB文件..."
+                    ["complete"]="操作完成"
+                    ["cache_cleared"]="缓存已清除"
+                    ["no_cache"]="无缓存问题"
+                    ["main_menu"]="返回主菜单"
+                    ["cancel"]="取消"
+                    ["invalid"]="无效选择，请重试。"
+                    ["selected"]="已选择"
+                )
+                break
+                ;;
+            3) # Hindi (हिन्दी)
+                lang=(
+                    ["title"]="RYNA CODE"
+                    ["subtitle"]="टूल v1"
+                    ["menu1"]="Obb निकालें"
+                    ["menu2"]="Obb पैक करें"
+                    ["menu3"]="बाहर निकलें"
+                    ["select_obb"]="प्रोसेस करने के लिए OBB फाइल चुनें:"
+                    ["no_obb"]="त्रुटि: $down डायरेक्टरी में कोई OBB फाइल नहीं मिली!"
+                    ["copy_obb"]="कृपया OBB फाइलों को /storage/emulated/0/Download डायरेक्टरी में कॉपी करें"
+                    ["unpacking"]="OBB फाइलें खोली जा रही हैं..."
+                    ["repacking"]="OBB फाइलें फिर से पैक की जा रही हैं..."
+                    ["complete"]="प्रक्रिया पूर्ण हुई"
+                    ["cache_cleared"]="कैश साफ हो गया"
+                    ["no_cache"]="कोई कैश समस्या नहीं"
+                    ["main_menu"]="मुख्य मेनू पर वापस जाएं"
+                    ["cancel"]="रद्द करें"
+                    ["invalid"]="अमान्य चयन, कृपया पुनः प्रयास करें।"
+                    ["selected"]="चयनित"
+                )
+                break
+                ;;
+            4) # Spanish (Español)
+                lang=(
+                    ["title"]="RYNA CODE"
+                    ["subtitle"]="herramienta v1"
+                    ["menu1"]="Extraer Obb"
+                    ["menu2"]="Reempaquetar Obb"
+                    ["menu3"]="Salir"
+                    ["select_obb"]="Seleccione el archivo OBB para procesar:"
+                    ["no_obb"]="Error: ¡No se encontró ningún archivo OBB en el directorio $down!"
+                    ["copy_obb"]="Copie los archivos OBB en el directorio /storage/emulated/0/Download"
+                    ["unpacking"]="Desempaquetando archivos OBB..."
+                    ["repacking"]="Reempaquetando archivos OBB..."
+                    ["complete"]="PROCESO COMPLETADO"
+                    ["cache_cleared"]="CACHÉ BORRADA"
+                    ["no_cache"]="NO HAY PROBLEMA DE CACHÉ"
+                    ["main_menu"]="Volver al menú principal"
+                    ["cancel"]="Cancelar"
+                    ["invalid"]="Selección no válida, inténtelo de nuevo."
+                    ["selected"]="Seleccionado"
+                )
+                break
+                ;;
+            5) # French (Français)
+                lang=(
+                    ["title"]="RYNA CODE"
+                    ["subtitle"]="outil v1"
+                    ["menu1"]="Extraire Obb"
+                    ["menu2"]="Recompresser Obb"
+                    ["menu3"]="Quitter"
+                    ["select_obb"]="Sélectionnez le fichier OBB à traiter:"
+                    ["no_obb"]="Erreur: Aucun fichier OBB trouvé dans le répertoire $down!"
+                    ["copy_obb"]="Veuillez copier les fichiers OBB dans le répertoire /storage/emulated/0/Download"
+                    ["unpacking"]="Décompression des fichiers OBB..."
+                    ["repacking"]="Recompression des fichiers OBB..."
+                    ["complete"]="PROCESSUS TERMINÉ"
+                    ["cache_cleared"]="CACHE VIDÉ"
+                    ["no_cache"]="PAS DE PROBLÈME DE CACHE"
+                    ["main_menu"]="Retour au menu principal"
+                    ["cancel"]="Annuler"
+                    ["invalid"]="Sélection invalide, veuillez réessayer."
+                    ["selected"]="Sélectionné"
+                )
+                break
+                ;;
+            6) # Arabic (العربية)
+                lang=(
+                    ["title"]="RYNA CODE"
+                    ["subtitle"]="أداة v1"
+                    ["menu1"]="استخراج Obb"
+                    ["menu2"]="إعادة حزم Obb"
+                    ["menu3"]="خروج"
+                    ["select_obb"]="حدد ملف OBB للمعالجة:"
+                    ["no_obb"]="خطأ: لم يتم العثور على ملف OBB في الدليل $down!"
+                    ["copy_obb"]="يرجى نسخ ملفات OBB إلى الدليل /storage/emulated/0/Download"
+                    ["unpacking"]="جارٍ فك ضغط ملفات OBB..."
+                    ["repacking"]="جارٍ إعادة حزم ملفات OBB..."
+                    ["complete"]="اكتملت العملية"
+                    ["cache_cleared"]="تم مسح الذاكرة المؤقتة"
+                    ["no_cache"]="لا توجد مشكلة في الذاكرة المؤقتة"
+                    ["main_menu"]="العودة إلى القائمة الرئيسية"
+                    ["cancel"]="إلغاء"
+                    ["invalid"]="اختيار غير صالح، يرجى المحاولة مرة أخرى."
+                    ["selected"]="تم الاختيار"
+                )
+                break
+                ;;
+            7) # Bengali (বাংলা)
+                lang=(
+                    ["title"]="RYNA CODE"
+                    ["subtitle"]="টুল v1"
+                    ["menu1"]="Obb এক্সট্রাক্ট করুন"
+                    ["menu2"]="Obb প্যাক করুন"
+                    ["menu3"]="প্রস্থান"
+                    ["select_obb"]="প্রক্রিয়া করার জন্য OBB ফাইল নির্বাচন করুন:"
+                    ["no_obb"]="ত্রুটি: $down ডিরেক্টরিতে কোন OBB ফাইল পাওয়া যায়নি!"
+                    ["copy_obb"]="অনুগ্রহ করে OBB ফাইলগুলি /storage/emulated/0/Download ডিরেক্টরিতে কপি করুন"
+                    ["unpacking"]="OBB ফাইল আনপ্যাক করা হচ্ছে..."
+                    ["repacking"]="OBB ফাইল পুনরায় প্যাক করা হচ্ছে..."
+                    ["complete"]="প্রক্রিয়া সম্পন্ন হয়েছে"
+                    ["cache_cleared"]="ক্যাশে পরিষ্কার করা হয়েছে"
+                    ["no_cache"]="ক্যাশে সমস্যা নেই"
+                    ["main_menu"]="প্রধান মেনুতে ফিরে যান"
+                    ["cancel"]="বাতিল করুন"
+                    ["invalid"]="অবৈধ নির্বাচন, অনুগ্রহ করে আবার চেষ্টা করুন।"
+                    ["selected"]="নির্বাচিত"
+                )
+                break
+                ;;
+            8) # Russian (Русский)
+                lang=(
+                    ["title"]="RYNA CODE"
+                    ["subtitle"]="инструмент v1"
+                    ["menu1"]="Распаковать Obb"
+                    ["menu2"]="Запаковать Obb"
+                    ["menu3"]="Выход"
+                    ["select_obb"]="Выберите файл OBB для обработки:"
+                    ["no_obb"]="Ошибка: В каталоге $down не найден файл OBB!"
+                    ["copy_obb"]="Пожалуйста, скопируйте файлы OBB в каталог /storage/emulated/0/Download"
+                    ["unpacking"]="Распаковка файлов OBB..."
+                    ["repacking"]="Перепаковка файлов OBB..."
+                    ["complete"]="ПРОЦЕСС ЗАВЕРШЕН"
+                    ["cache_cleared"]="КЭШ ОЧИЩЕН"
+                    ["no_cache"]="НЕТ ПРОБЛЕМ С КЭШЕМ"
+                    ["main_menu"]="Вернуться в главное меню"
+                    ["cancel"]="Отмена"
+                    ["invalid"]="Неверный выбор, пожалуйста, попробуйте еще раз."
+                    ["selected"]="Выбрано"
+                )
+                break
+                ;;
+            9) # Portuguese (Português)
+                lang=(
+                    ["title"]="RYNA CODE"
+                    ["subtitle"]="ferramenta v1"
+                    ["menu1"]="Extrair Obb"
+                    ["menu2"]="Recompactar Obb"
+                    ["menu3"]="Sair"
+                    ["select_obb"]="Selecione o arquivo OBB para processar:"
+                    ["no_obb"]="Erro: Nenhum arquivo OBB encontrado no diretório $down!"
+                    ["copy_obb"]="Por favor, copie os arquivos OBB para o diretório /storage/emulated/0/Download"
+                    ["unpacking"]="Descompactando arquivos OBB..."
+                    ["repacking"]="Recompactando arquivos OBB..."
+                    ["complete"]="PROCESSO CONCLUÍDO"
+                    ["cache_cleared"]="CACHE LIMPO"
+                    ["no_cache"]="SEM PROBLEMAS DE CACHE"
+                    ["main_menu"]="Voltar ao menu principal"
+                    ["cancel"]="Cancelar"
+                    ["invalid"]="Seleção inválida, por favor tente novamente."
+                    ["selected"]="Selecionado"
+                )
+                break
+                ;;
+            10) # Indonesian (Bahasa Indonesia)
+                lang=(
+                    ["title"]="RYNA CODE"
+                    ["subtitle"]="alat v1"
+                    ["menu1"]="Ekstrak Obb"
+                    ["menu2"]="Kemas ulang Obb"
+                    ["menu3"]="Keluar"
+                    ["select_obb"]="Pilih file OBB untuk diproses:"
+                    ["no_obb"]="Kesalahan: Tidak ada file OBB yang ditemukan di direktori $down!"
+                    ["copy_obb"]="Silakan salin file OBB ke direktori /storage/emulated/0/Download"
+                    ["unpacking"]="Membongkar file OBB..."
+                    ["repacking"]="Mengemas ulang file OBB..."
+                    ["complete"]="PROSES SELESAI"
+                    ["cache_cleared"]="CACHE DIHAPUS"
+                    ["no_cache"]="TIDAK ADA MASALAH CACHE"
+                    ["main_menu"]="Kembali ke Menu Utama"
+                    ["cancel"]="Batal"
+                    ["invalid"]="Pilihan tidak valid, silakan coba lagi."
+                    ["selected"]="Dipilih"
+                )
+                break
+                ;;
+            11) # Urdu (اردو)
+                lang=(
+                    ["title"]="RYNA CODE"
+                    ["subtitle"]="ٹول v1"
+                    ["menu1"]="Obb نکالیں"
+                    ["menu2"]="Obb دوبارہ پیک کریں"
+                    ["menu3"]="باہر نکلیں"
+                    ["select_obb"]="پروسس کرنے کے لیے OBB فائل منتخب کریں:"
+                    ["no_obb"]="خرابی: $down ڈائرکٹری میں کوئی OBB فائل نہیں ملی!"
+                    ["copy_obb"]="براہ کرم OBB فائلوں کو /storage/emulated/0/Download ڈائرکٹری میں کاپی کریں"
+                    ["unpacking"]="OBB فائلیں کھولی جا رہی ہیں..."
+                    ["repacking"]="OBB فائلیں دوبارہ پیک کی جا رہی ہیں..."
+                    ["complete"]="عمل مکمل ہوگیا"
+                    ["cache_cleared"]="کیش صاف ہو گیا"
+                    ["no_cache"]="کیش کا کوئی مسئلہ نہیں"
+                    ["main_menu"]="مین مینو پر واپس جائیں"
+                    ["cancel"]="منسوخ کریں"
+                    ["invalid"]="غلط انتخاب، براہ کرم دوبارہ کوشش کریں۔"
+                    ["selected"]="منتخب"
+                )
+                break
+                ;;
+            12) # German (Deutsch)
+                lang=(
+                    ["title"]="RYNA CODE"
+                    ["subtitle"]="Werkzeug v1"
+                    ["menu1"]="Obb entpacken"
+                    ["menu2"]="Obb verpacken"
+                    ["menu3"]="Beenden"
+                    ["select_obb"]="Wählen Sie die zu verarbeitende OBB-Datei aus:"
+                    ["no_obb"]="Fehler: Keine OBB-Datei im Verzeichnis $down gefunden!"
+                    ["copy_obb"]="Bitte kopieren Sie OBB-Dateien in das Verzeichnis /storage/emulated/0/Download"
+                    ["unpacking"]="OBB-Dateien werden entpackt..."
+                    ["repacking"]="OBB-Dateien werden neu verpackt..."
+                    ["complete"]="VORGANG ABGESCHLOSSEN"
+                    ["cache_cleared"]="CACHE GELÖSCHT"
+                    ["no_cache"]="KEIN CACHE-PROBLEM"
+                    ["main_menu"]="Zurück zum Hauptmenü"
+                    ["cancel"]="Abbrechen"
+                    ["invalid"]="Ungültige Auswahl, bitte versuchen Sie es erneut."
+                    ["selected"]="Ausgewählt"
+                )
+                break
+                ;;
+            13) # Japanese (日本語)
+                lang=(
+                    ["title"]="RYNA CODE"
+                    ["subtitle"]="ツール v1"
+                    ["menu1"]="Obbを解凍"
+                    ["menu2"]="Obbを再パック"
+                    ["menu3"]="終了"
+                    ["select_obb"]="処理するOBBファイルを選択してください:"
+                    ["no_obb"]="エラー: $down ディレクトリにOBBファイルが見つかりません!"
+                    ["copy_obb"]="OBBファイルを /storage/emulated/0/Download ディレクトリにコピーしてください"
+                    ["unpacking"]="OBBファイルを解凍中..."
+                    ["repacking"]="OBBファイルを再パック中..."
+                    ["complete"]="処理が完了しました"
+                    ["cache_cleared"]="キャッシュをクリアしました"
+                    ["no_cache"]="キャッシュの問題はありません"
+                    ["main_menu"]="メインメニューに戻る"
+                    ["cancel"]="キャンセル"
+                    ["invalid"]="無効な選択です、もう一度試してください。"
+                    ["selected"]="選択済み"
+                )
+                break
+                ;;
+            14) # Turkish (Türkçe)
+                lang=(
+                    ["title"]="RYNA CODE"
+                    ["subtitle"]="araç v1"
+                    ["menu1"]="Obb ayırma"
+                    ["menu2"]="Obb birleştirme"
+                    ["menu3"]="Çıkış"
+                    ["select_obb"]="İşlem yapılacak OBB dosyasını seçin:"
+                    ["no_obb"]="Hata: $down dizininde OBB dosyası bulunamadı!"
+                    ["copy_obb"]="Lütfen OBB dosyalarını /storage/emulated/0/Download dizinine kopyalayın"
+                    ["unpacking"]="OBB Dosyaları Açılıyor..."
+                    ["repacking"]="OBB Dosyaları Yeniden Paketleniyor..."
+                    ["complete"]="İŞLEM TAMAMLANDI"
+                    ["cache_cleared"]="ÖNBELLEK TEMİZLENDİ"
+                    ["no_cache"]="ÖNBELLEK SORUNU YOK"
+                    ["main_menu"]="Ana Menüye Dön"
+                    ["cancel"]="İptal"
+                    ["invalid"]="Geçersiz seçim, tekrar deneyin."
+                    ["selected"]="Seçilen"
+                )
+                break
+                ;;
+            15) # Italian (Italiano)
+                lang=(
+                    ["title"]="RYNA CODE"
+                    ["subtitle"]="strumento v1"
+                    ["menu1"]="Estrai Obb"
+                    ["menu2"]="Ricomprimi Obb"
+                    ["menu3"]="Esci"
+                    ["select_obb"]="Seleziona il file OBB da elaborare:"
+                    ["no_obb"]="Errore: Nessun file OBB trovato nella directory $down!"
+                    ["copy_obb"]="Per favore copia i file OBB nella directory /storage/emulated/0/Download"
+                    ["unpacking"]="Decompressione file OBB..."
+                    ["repacking"]="Ricompresione file OBB..."
+                    ["complete"]="PROCESSO COMPLETATO"
+                    ["cache_cleared"]="CACHE PULITA"
+                    ["no_cache"]="NESSUN PROBLEMA DI CACHE"
+                    ["main_menu"]="Torna al menu principale"
+                    ["cancel"]="Annulla"
+                    ["invalid"]="Selezione non valida, per favore riprova."
+                    ["selected"]="Selezionato"
+                )
+                break
+                ;;
+            16) # Polish (Polski)
+                lang=(
+                    ["title"]="RYNA CODE"
+                    ["subtitle"]="narzędzie v1"
+                    ["menu1"]="Wypakuj Obb"
+                    ["menu2"]="Spakuj Obb"
+                    ["menu3"]="Wyjdź"
+                    ["select_obb"]="Wybierz plik OBB do przetworzenia:"
+                    ["no_obb"]="Błąd: Nie znaleziono pliku OBB w katalogu $down!"
+                    ["copy_obb"]="Skopiuj pliki OBB do katalogu /storage/emulated/0/Download"
+                    ["unpacking"]="Wypakowywanie plików OBB..."
+                    ["repacking"]="Ponowne pakowanie plików OBB..."
+                    ["complete"]="PROCES ZAKOŃCZONY"
+                    ["cache_cleared"]="PAMIĘĆ PODRĘCZNA WYCZYSZCZONA"
+                    ["no_cache"]="BRAK PROBLEMÓW Z PAMIĘCIĄ PODRĘCZNĄ"
+                    ["main_menu"]="Powrót do menu głównego"
+                    ["cancel"]="Anuluj"
+                    ["invalid"]="Nieprawidłowy wybór, spróbuj ponownie."
+                    ["selected"]="Wybrano"
+                )
+                break
+                ;;
+            17) # Exit
+                exit 0
+                ;;
+            *)
+                echo "Invalid selection"
+                ;;
+        esac
+    done
+    clear
+    main_menu
+}
+
+# Ana menü fonksiyonu
+function main_menu {
+    clear
+    echo -e "${BLUE}${lang["title"]}${NOCOLOR} ${WHITE}${lang["subtitle"]}${NOCOLOR}"
+    echo -e "-----------------------"
+    PS3=': '
+    options=("${lang["menu1"]}" "${lang["menu2"]}" "${lang["menu3"]}")
+    select opt in "${options[@]}"
+    do
+        case $REPLY in
+            1)
+                echo -e "${YELLOW}${lang["menu1"]}..${NOCOLOR}"
+                if [[ "$(find $ryna_dir -name "*.obb" -o -name "*.OBB")" ]]; then
+                    unpackobb
+                else
+                    select_obb_file
+                    unpackobb
+                fi
+                ;;
+            2)
+                echo -e "${YELLOW}${lang["menu2"]}..${NOCOLOR}"
+                repackobb
+                ;;
+            3)
+                exit
+                ;;
+            *)
+                echo "${lang["invalid"]}"
+                ;;
+        esac
+    done
+}
+
+# Cache fonksiyonu
+function cache {
+echo -e "
+mv $opt $ryna_dir &> /dev/null
+cd $ryna_dir
+if [[ -d \"$ryna_dir/output\" ]]; then
+rm -rf $ryna_dir/output
+rm $ryna_dir/cache
+else
+cp -rf $down/output $ryna_dir &> /dev/null
+rm -rf $ryna_dir/output
+rm $ryna_dir/cache
+fi
+" >$ryna_dir/cache
+chmod +x $ryna_dir/cache
+}
+
+# Boyut ayarlama fonksiyonları
+function sizeupdown {
+cd $ryna_dir
+obbsize=$(cat $ryna_dir/boyutkoruma.ini)
+count=$(printf $(du -b *.obb.zip))
+if [ $count -lt $obbsize ]; then
+while [ $count -lt $obbsize ]; do
+truncate -s+1 *.zip
+printf "$count\n"
+let count=count+1
+done
+else
+while [ $count -gt $obbsize ]; do
+truncate -s-1 *.zip
+printf "$count\n"
+let count=count-1
+done
+fi
+}
+
+function fnsh {
+cd $ryna_dir
+obbsize=$(cat $ryna_dir/boyutkoruma.ini)
+count=$(printf $(du -b *.zip))
+if [ $count -lt $obbsize ]; then
+while [ $count -lt $obbsize ]; do
+truncate -s+100 *.zip
+printf "$count\n"
+let count=count+100
+done
+sizeupdown
+else
+while [ $count -gt $obbsize ]; do
+truncate -s-100 *.zip
+printf "$count\n"
+let count=count-100
+exit
+done
+sizeupdown
+fi
+}
+
+# OBB işlem fonksiyonları
+function repackobb {
+printf "\n"
+echo -e "${YELLOW}${lang["repacking"]} ${NOCOLOR}"
+cd $ryna_dir
+mv $ryna_dir/*zip $ryna_dir
+obbnm=$(find *zip)
+obbdir=$(printf $(find * -maxdepth 0 -type d))
+zip -u -0 $obbnm
+fnsh
+printf "\n"
+printf "\n"
+cd $ryna_dir
+obbsize=$(cat $ryna_dir/boyutkoruma.ini)
+four=$(printf $(du -b *zip))
+five=$(expr $obbsize - $four)
+six=$(expr $five / 8)
+mv $(for file in *.zip; do basename $file .obb.zip; done;).obb.zip $(for file in *zip; do basename $file .obb.zip; done;).obb
+rm -rf $ryna_dir/boyutkoruma.ini
+rm -rf $obbdir
+echo -e "${LIGHTGREEN}${lang["complete"]} ${NOCOLOR}"
+printf "\n"
+main_menu
+}
+
+function select_obb_file {
+clear
+echo -e "${CYAN}${lang["select_obb"]}${NOCOLOR}"
+options=()
+while IFS= read -r file; do
+options+=("$file")
+done < <(find "$down" -maxdepth 1 -type f \( -name "*.obb" -o -name "*.OBB" \) -exec basename {} \;)
+
+if [ ${#options[@]} -eq 0 ]; then
+echo -e "${RED}${lang["no_obb"]}${NOCOLOR}"
+echo -e "${YELLOW}${lang["copy_obb"]}${NOCOLOR}"
+exit 1
+fi
+
+PS3="${lang["select_obb"]} "
+select opt in "${options[@]}" "${lang["cancel"]}"; do
+if [[ $REPLY -le ${#options[@]} && $REPLY -gt 0 ]]; then
+selected_obb="$down/$opt"
+cp "$selected_obb" "$ryna_dir/"
+echo -e "${GREEN}${lang["selected"]}: $opt${NOCOLOR}"
+break
+elif [[ $REPLY -eq $((${#options[@]}+1)) ]]; then
+echo "${lang["cancel"]}"
+main_menu
+else
+echo "${lang["invalid"]}"
+fi
+done
+}
+
+function unpackobb {
+printf "\n"
+select_obb_file
+echo -e "${YELLOW}${lang["unpacking"]} ${NOCOLOR}"
+cd $ryna_dir
+for f in *obb *OBB; do 
+    [ -f "$f" ] || continue
+    mv "$f" "${f}.zip"
+done
+echo $(printf $(du -b *.obb.zip)) > $ryna_dir/boyutkoruma.ini
+printf "\n"
+printf "\n"
+unzip *.obb.zip
+sleep 1
+mv *.obb.zip $ryna_dir
+printf "\n"
+printf "\n"
+echo -e "${LIGHTGREEN}${lang["complete"]} ${NOCOLOR}"
+printf "\n"
+main_menu
+}
+
+function rstall {
+printf "\n"
+cd $ryna_dir
+if [[ -f "boyutkoruma.ini" ]]; then
+if [[ -f $(find *".obb.zip") ]]; then
+rm -rf *.obb.zip
+fi
+rm -rf boyutkoruma.ini
+printf "\n"
+echo -e "${YELLOW}${lang["cache_cleared"]} ${NOCOLOR}"
+else
+printf "\n"
+echo -e "${LIGHTGREEN}${lang["no_cache"]} ${NOCOLOR}"
+fi
+}
+
+# Ana başlangıç
+clear
+install_dependencies
+select_language
