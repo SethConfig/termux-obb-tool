@@ -37,7 +37,7 @@ git clone https://github.com/SethConfig/termux-obb-tool
 cd termux-obb-tool
 ```
 ```bash
-chmod +x OBB.txt
+chmod +x OBB
 ```
 ```bash
 bash OBB
