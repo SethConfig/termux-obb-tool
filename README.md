@@ -105,14 +105,4 @@ A: The tool maintains file size but cannot fix corrupted or improperly modified 
 **Q: Can I use this on PC?**
 A: No, this is specifically designed for Termux on Android.
 
-## ⚠️ Important Notes
-- Always make backups of original OBB files
-- Some games may detect and reject modified OBB files
-- Use this tool responsibly and legally
-
-## 🌟 Support
-If you find this tool helpful, consider starring the project on GitHub!
-
----
-
-This README is designed to guide even complete beginners through the process. The tool's interface is available in multiple languages to accommodate users worldwide.
+**youtube.com/@rynacode**
