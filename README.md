@@ -105,4 +105,4 @@ A: The tool maintains file size but cannot fix corrupted or improperly modified 
 **Q: Can I use this on PC?**
 A: No, this is specifically designed for Termux on Android.
 
-**https://m.youtube.com/@rynacode**
+**https://m.youtube.com/@sayretna**
